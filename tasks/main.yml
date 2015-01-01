@@ -17,7 +17,7 @@
   file: state=directory path={{spark_install_dir}} owner={{spark_user}} group={{spark_group}} recurse=yes
   tags: ["packages","spark"]
 
-- name: retreive spark from git
+- name: retrieve spark from git
   sudo_user: "{{spark_user}}"
   tags: packerio
   git: > 
@@ -25,7 +25,6 @@
      version={{spark_version}} update=yes depth=1 
   environment: spark_environment
   tags: ["packages","spark"]
-
 
 - name: checks if spark compilation is required
   stat: 
