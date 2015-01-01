@@ -26,6 +26,13 @@
   environment: spark_environment
   tags: ["packages","spark"]
 
+
+- name: checks if spark compilation is required
+  stat: 
+    path="{{spark_skip_compilation_flag_file}}"
+  register: spark_skip_assembly
+  when: spark_skip_compilation_flag_file is defined 
+
 - name: spark compilation
   sudo_user: "{{spark_user}}"
   shell: "{{item}}"
@@ -34,8 +41,10 @@
   environment: spark_environment
   with_items:
      - mvn dependency:resolve
-     - sbt/sbt assembly {{spark_compile_options}}
+#     - sbt/sbt assembly {{spark_compile_options}}
+     - mvn clean package {{spark_compile_options}}
   tags: ["compilation","spark"]
+  when: spark_skip_assembly is undefined or not spark_skip_assembly.stat.exists 
 
 - name: configure spark
   template: src={{item}}.j2 dest={{spark_install_dir}}/conf/{{item}} owner={{spark_user}}
