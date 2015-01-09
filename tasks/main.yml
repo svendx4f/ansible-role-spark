@@ -17,8 +17,8 @@
   file: state=directory path={{spark_install_dir}} owner={{spark_user}} group={{spark_group}} recurse=yes
   tags: ["packages","spark"]
 
-
-
+##
+# building spark from source
 - name: retrieve spark from git
   sudo_user: "{{spark_user}}"
   tags: packerio
@@ -32,7 +32,7 @@
 - name: checks if spark compilation is required (if method=build)
   stat: 
     path="{{spark_binary_provider.produces}}"
-  register: spark_assembly_file
+  register: _checked_spark_assembly_file
   when: spark_binary_provider.method == "build" and spark_binary_provider.produces is defined
 
 - name: spark compilation (if method=build and binary not present yet)
@@ -46,8 +46,19 @@
 #     - sbt/sbt assembly {{spark_compile_options}}
      - mvn clean package {{spark_compile_options}}
   tags: ["compilation","spark"]
-  when: spark_binary_provider.method == 'build' and (spark_binary_provider.produces is undefined or not spark_assembly_file.stat.exists)
+  when: spark_binary_provider.method == 'build' and (spark_binary_provider.produces is undefined or not _checked_spark_assembly_file.stat.exists)
 
+
+##
+# getting spark from a pre-built package
+
+# unfortunately, s3 checksums are messy, lead to this issue: https://github.com/ansible/ansible/issues/5442
+# => avoiding re-downloads simply based on file names :(
+- name: checks if spark package is already present
+  stat:
+    path="{{spark_install_dir}}/{{spark_binary_provider.package_name}}"
+  when: spark_binary_provider.method == 'download' and spark_binary_provider.repository == 's3'
+  register: _checked_spark_binary_file
 
 - name: downloads spark bin from s3 (if repository is s3)
   s3: 
@@ -56,8 +67,9 @@
     dest="{{spark_install_dir}}/{{spark_binary_provider.package_name}}"
     region="{{spark_binary_provider.region}}"
     mode=get
+    overwrite=yes
   environment: aws_cred_env
-  when: spark_binary_provider.method == 'download' and spark_binary_provider.repository == 's3'
+  when: spark_binary_provider.method == 'download' and spark_binary_provider.repository == 's3' and not _checked_spark_binary_file.stat.exists
 
 - name: uncompress spark s3 package
   unarchive: 
@@ -66,6 +78,7 @@
     owner="{{spark_user}}"
     group="{{spark_group}}"
     copy=no
+    creates="{{spark_install_dir}}/LICENSE"
   when: spark_binary_provider.method == 'download'
 
 

@@ -7,3 +7,28 @@ spark_compile_options: "-Phive -Pyarn"
 spark_environment: {}
 spark_user: "spark"
 spark_group: "{{spark_user}}"
+
+# use this spark_binary_provider in order to build spark from source. 
+# Optionnaly, specify the produced assembly file to prevent re-compilation at every run
+spark_binary_provider: 
+    method: build
+#    produces: "{{spark_install_dir}}/assembly/target/scala-2.10/spark-assembly-{{spark_version_number}}-hadoop2.5.0-mr1-{{cdh_version}}.jar"
+
+
+# use this in order to download an existing pre-built package from aws s3 
+#spark_binary_provider: 
+#    method: download
+#    repository: s3
+#    bucket: svend.ria.ir
+#    region: eu-west-1
+#    s3_path: /devops/spark
+#    package_name: spark-{{spark_version_number}}-hadoop2.5.0-mr1-{{cdh_version}}.zip
+    
+
+# if you use the second spark_binary_provider, specify here the credentials of a user 
+# allowed to read from the s3 bucket
+#aws_cred_env:
+#  AWS_ACCESS_KEY_ID: specify_your_aws_key_id_here
+#  AWS_SECRET_ACCESS_KEY: specify_your_aws_access_key_here
+
+
